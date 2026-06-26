@@ -1,0 +1,6 @@
+numpy>=1.26
+pygame-ce>=2.5
+pillow>=10.0
+pettingzoo>=1.24
+torch>=2.0
+tqdm>=4.60

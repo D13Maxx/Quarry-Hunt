@@ -1,0 +1,18 @@
+{
+  "n_episodes": 100,
+  "captures": 1,
+  "rim_drives": 0,
+  "timeouts": 99,
+  "capture_rate": 0.01,
+  "mean_ttc": 111.0,
+  "pred_top1": 0.009827063418924809,
+  "pred_argmax_cheby": 8.29678726196289,
+  "pred_expected_cheby": 8.751616477966309,
+  "pred_true_cell_prob": 0.004523203242570162,
+  "offset_mean": 10.654462357490834,
+  "offset_median": 10.0,
+  "offset_percentiles": {
+    "p50": 10.0,
+    "p90": 7.0
+  }
+}
