@@ -8,7 +8,7 @@ class Config:
     num_hunters: int = 3
     hunter_vision: int = 5
     prey_vision: int = 13
-    max_steps: int = 200
+    max_steps: int = 300
     cell_px: int = 24
     gif_fps: int = 10
 
@@ -42,9 +42,9 @@ class Config:
 
     # --- reward shaping ---
     capture_reward: float = 10.0
-    rim_drive_reward: float = -1.0
+    rim_drive_reward: float = 0.0       # zeroed for objective-only reward; restore to -1.0 for shaping
     step_penalty: float = -0.01
-    closing_reward_scale: float = 0.1
+    closing_reward_scale: float = 0.0   # zeroed for objective-only reward; restore to 0.1 for shaping
 
     # --- training ---
     batch_size: int = 64

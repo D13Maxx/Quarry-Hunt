@@ -13,7 +13,7 @@ ckpt = torch.load("checkpoints/joint_1000.pt", map_location=device, weights_only
 actor = Actor(cfg).to(device);        actor.load_state_dict(ckpt["actor"])
 predictor = PreyPredictor(cfg).to(device); predictor.load_state_dict(ckpt["predictor"])
 
-result = evaluate(actor, predictor, cfg, n_episodes=200, device=device, save_dir="eval_trained")
+result = evaluate(actor, predictor, cfg, n_episodes=300, device=device, save_dir="eval_trained")
 print_report(result)
 
 off = result["offsets"]
