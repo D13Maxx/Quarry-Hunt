@@ -90,7 +90,8 @@ def main():
     while True:
         obs, _ = env.reset()
         renderer.draw(env.grid, env.hunter_pos, env.prey_pos, 0, cfg.max_steps, None,
-                      pred_info=[] if has_predictor else None)
+                      pred_info=[] if has_predictor else None,
+                      magic_mask=env.magic_mask)
         if not args.headless:
             btn = draw_start_button(renderer)
             pygame.display.flip()
@@ -162,7 +163,8 @@ def main():
 
             renderer.draw(env.grid, env.hunter_pos, env.prey_pos,
                           env.step_count, cfg.max_steps, env.winner,
-                          ghost_cells=ghost_cells, pred_info=pred_info)
+                          ghost_cells=ghost_cells, pred_info=pred_info,
+                          magic_mask=env.magic_mask)
             renderer.capture_frame()
             if not args.headless:
                 renderer.clock.tick(cfg.gif_fps)

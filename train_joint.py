@@ -44,7 +44,16 @@ def load_checkpoint(path, actor, critic, predictor, pred_opt, ppo_opt, device="c
     return ckpt["iteration"]
 
 
-def train(cfg: Config, device: str = "cpu", resume: bool = False):
+def load_weights_only(path, actor, critic, predictor, device="cpu"):
+    ckpt = torch.load(path, map_location=device, weights_only=False)
+    actor.load_state_dict(ckpt["actor"])
+    critic.load_state_dict(ckpt["critic"])
+    predictor.load_state_dict(ckpt["predictor"])
+    print(f"Warm-started weights from {path} (fresh optimizers, starting iteration 1)")
+
+
+def train(cfg: Config, device: str = "cpu", resume: bool = False,
+          init_from: str | None = None):
     dev = torch.device(device)
     predictor = PreyPredictor(cfg).to(dev)
     actor = Actor(cfg).to(dev)
@@ -58,11 +67,15 @@ def train(cfg: Config, device: str = "cpu", resume: bool = False):
 
     start_it = 0
     if resume:
+        if init_from:
+            print("NOTE: both --resume and --init-from set; resume takes precedence")
         ckpt_path = _find_latest_checkpoint(cfg)
         if ckpt_path:
             start_it = load_checkpoint(ckpt_path, actor, critic, predictor,
                                        pred_opt, ppo_opt, device)
             print(f"Resumed from {ckpt_path} (iteration {start_it})")
+    elif init_from:
+        load_weights_only(init_from, actor, critic, predictor, device)
 
     history = []
 
@@ -118,5 +131,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--resume", action="store_true", help="Resume from latest checkpoint")
+    parser.add_argument("--init-from", default=None, help="Warm-start weights from checkpoint (fresh optimizers)")
     args = parser.parse_args()
-    train(Config(), device=args.device, resume=args.resume)
+    train(Config(), device=args.device, resume=args.resume, init_from=args.init_from)

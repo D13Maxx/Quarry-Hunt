@@ -13,6 +13,7 @@ COLORS = {
     "grid": (40, 40, 40),
     "hud_bg": (30, 30, 30),
     "text": (220, 220, 220),
+    "magic": (160, 50, 220),
 }
 
 # per-hunter ghost colors (RGB)
@@ -48,7 +49,7 @@ class Renderer:
         self.ghost_mode = (self.ghost_mode + 1) % (self.cfg.num_hunters + 1)
 
     def draw(self, grid, hunter_pos, prey_pos, step, max_steps, winner,
-             ghost_cells=None, pred_info=None):
+             ghost_cells=None, pred_info=None, magic_mask=None):
         cpx = self.cfg.cell_px
         self.surface.fill(COLORS["hud_bg"])
 
@@ -59,23 +60,38 @@ class Renderer:
                 pygame.draw.rect(self.surface, color, (x, y, cpx, cpx))
                 pygame.draw.rect(self.surface, COLORS["grid"], (x, y, cpx, cpx), 1)
 
+        if magic_mask is not None:
+            self._draw_magic_zones(magic_mask)
+
         if ghost_cells:
             self._draw_ghosts(ghost_cells)
 
         radius = cpx // 3
         for i, (hr, hc) in enumerate(hunter_pos):
             cx, cy = hc * cpx + cpx // 2, hr * cpx + cpx // 2
-            pygame.draw.circle(self.surface, COLORS["hunter"], (cx, cy), radius)
+            blinded = magic_mask is not None and magic_mask[hr, hc]
+            color = (100, 100, 100) if blinded else COLORS["hunter"]
+            pygame.draw.circle(self.surface, color, (cx, cy), radius)
             label = self.font.render(str(i), True, (255, 255, 255))
             self.surface.blit(label, (cx - label.get_width() // 2, cy - label.get_height() // 2))
+            if blinded:
+                # red X over blinded hunter
+                d = radius
+                pygame.draw.line(self.surface, (255, 60, 60), (cx - d, cy - d), (cx + d, cy + d), 2)
+                pygame.draw.line(self.surface, (255, 60, 60), (cx - d, cy + d), (cx + d, cy - d), 2)
 
         pr, pc = prey_pos
         cx, cy = pc * cpx + cpx // 2, pr * cpx + cpx // 2
-        pygame.draw.circle(self.surface, COLORS["prey"], (cx, cy), radius)
+        # highlight prey if it's inside a magic zone (invisible to hunters)
+        prey_hidden = magic_mask is not None and magic_mask[pr, pc]
+        prey_color = (255, 200, 80) if prey_hidden else COLORS["prey"]
+        pygame.draw.circle(self.surface, prey_color, (cx, cy), radius)
+        if prey_hidden:
+            pygame.draw.circle(self.surface, COLORS["magic"], (cx, cy), radius, 2)
 
         self._draw_vision(hunter_pos, self.cfg.hunter_vision, (65, 105, 225, 80), (65, 105, 225))
         self._draw_vision([prey_pos], self.cfg.prey_vision, (255, 140, 0, 80), (255, 140, 0))
-        self._draw_hud(hunter_pos, prey_pos, step, max_steps, winner, pred_info)
+        self._draw_hud(hunter_pos, prey_pos, step, max_steps, winner, pred_info, magic_mask)
 
         if not self.headless:
             pygame.display.flip()
@@ -103,6 +119,15 @@ class Renderer:
                 overlay.fill((*rgb, alpha))
                 self.surface.blit(overlay, (bc * cpx, br * cpx))
 
+    def _draw_magic_zones(self, magic_mask):
+        cpx = self.cfg.cell_px
+        overlay = pygame.Surface((cpx, cpx), pygame.SRCALPHA)
+        overlay.fill((*COLORS["magic"], 70))
+        for r in range(self.cfg.grid_size):
+            for c in range(self.cfg.grid_size):
+                if magic_mask[r, c]:
+                    self.surface.blit(overlay, (c * cpx, r * cpx))
+
     def _draw_vision(self, positions, vision, rgba, border_rgb):
         cpx = self.cfg.cell_px
         half = vision // 2
@@ -119,7 +144,8 @@ class Renderer:
             self.surface.blit(overlay, (px_x, px_y))
             pygame.draw.rect(self.surface, border_rgb, (px_x, px_y, pw, ph), 2)
 
-    def _draw_hud(self, hunter_pos, prey_pos, step, max_steps, winner, pred_info=None):
+    def _draw_hud(self, hunter_pos, prey_pos, step, max_steps, winner, pred_info=None,
+                  magic_mask=None):
         sx = self.grid_px + 10
         pr, pc = prey_pos
         lines = [
@@ -127,9 +153,20 @@ class Renderer:
             f"Status: {winner.upper() + ' WIN' if winner else 'RUNNING'}",
             "",
         ]
+
+        if magic_mask is not None:
+            n_zones = int(magic_mask.sum())
+            prey_hidden = bool(magic_mask[pr, pc])
+            lines.append(f"Magic cells: {n_zones}")
+            if prey_hidden:
+                lines.append("Prey: HIDDEN")
+            lines.append("")
+
         for i, (hr, hc) in enumerate(hunter_pos):
             d = max(abs(hr - pr), abs(hc - pc))
             line = f"H{i} dist:{d}"
+            if magic_mask is not None and magic_mask[hr, hc]:
+                line += " [BLIND]"
             if pred_info and i < len(pred_info):
                 pi = pred_info[i]
                 line += f" pred({pi['r']},{pi['c']}) p={pi['p']:.2f}"

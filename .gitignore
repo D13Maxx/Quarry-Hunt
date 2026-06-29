@@ -1,0 +1,37 @@
+# Virtual environment
+.venv/
+
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+
+
+
+# Images, GIFs, videos
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.webp
+*.mp4
+*.avi
+
+# Docs & markdown
+*.md
+
+# Evaluation output dirs
+eval_trained/
+baselines/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Keep requirements.txt
+!requirements.txt

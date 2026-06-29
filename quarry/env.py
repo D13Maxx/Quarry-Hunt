@@ -8,6 +8,7 @@ from quarry.agents import make_hunter_states
 from quarry.world import (
     NUM_ACTIONS, NUM_CHANNELS,
     create_grid, spawn_hunters, spawn_prey, apply_move, check_win, ego_obs,
+    place_magic_zones,
 )
 
 
@@ -31,6 +32,11 @@ class QuarryEnv(ParallelEnv):
         self.grid = create_grid(self.cfg.grid_size)
         self.hunter_pos = spawn_hunters(self.cfg.grid_size)
         self.prey_pos = spawn_prey(self.cfg.grid_size, self.rng)
+        self.magic_mask = place_magic_zones(
+            self.cfg.grid_size, self.rng,
+            self.cfg.magic_zones_min, self.cfg.magic_zones_max,
+            exclude_cells=set(self.hunter_pos),
+        )
         self.step_count = 0
         self.agents = list(self.possible_agents)
         self.winner = None
@@ -69,9 +75,11 @@ class QuarryEnv(ParallelEnv):
             out[f"hunter_{i}"] = ego_obs(
                 self.grid, self.hunter_pos[i], self.cfg.hunter_vision,
                 self.hunter_pos, self.prey_pos, i, False,
+                magic_mask=self.magic_mask,
             )
         out["prey"] = ego_obs(
             self.grid, self.prey_pos, self.cfg.prey_vision,
             self.hunter_pos, self.prey_pos, -1, True,
+            magic_mask=self.magic_mask,
         )
         return out

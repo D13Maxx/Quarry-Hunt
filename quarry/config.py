@@ -12,6 +12,10 @@ class Config:
     cell_px: int = 24
     gif_fps: int = 10
 
+    # --- magic zones (hunter-blinding 3×3 patches) ---
+    magic_zones_min: int = 1
+    magic_zones_max: int = 5
+
     # --- hunter search behaviour (heuristic baseline) ---
     hunter_persistence: float = 0.8
     hunter_memory_steps: int = 12
