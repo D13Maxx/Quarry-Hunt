@@ -61,7 +61,7 @@ rs4.prev_min_dist = 2
 hunter4 = [(20, 20)]
 prey4 = (20, 21)  # dist=1 -> capture
 r4, bd4 = compute_reward(hunter4, prey4, grid, rs4, cfg, team_saw_prey=True)
-expected4 = cfg.capture_reward + cfg.sighting_reward + cfg.step_penalty  # 50.0 + 0.02 + (-0.01) = 50.01
+expected4 = cfg.capture_reward + cfg.sighting_reward + cfg.step_penalty
 assert abs(r4 - expected4) < 1e-9, f"expected {expected4}, got {r4}"
 print(f"Test 4 PASSED: reward={r4}, {bd4}")
 
@@ -77,7 +77,7 @@ assert abs(r5 - cfg0.step_penalty) < 1e-9
 rs5b = RewardState()
 rs5b.prev_min_dist = 2
 r5b, bd5b = compute_reward([(20, 20)], (20, 21), grid, rs5b, cfg0, team_saw_prey=False)
-assert bd5b["capture"] == 50.0, f"capture should be 50.0 from config, got {bd5b['capture']}"
+assert bd5b["capture"] == cfg0.capture_reward, f"capture should be {cfg0.capture_reward} from config, got {bd5b['capture']}"
 print(f"Test 5 PASSED (config-driven): sighting={bd5['sighting']}, capture={bd5b['capture']}")
 
 print("\n=== ALL 5 VALIDATIONS PASSED ===")
