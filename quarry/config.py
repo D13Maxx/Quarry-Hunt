@@ -4,11 +4,11 @@ from dataclasses import dataclass
 @dataclass
 class Config:
     # --- environment ---
-    grid_size: int = 25
+    grid_size: int = 41
     num_hunters: int = 3
     hunter_vision: int = 5
     prey_vision: int = 13
-    max_steps: int = 300
+    max_steps: int = 350
     cell_px: int = 24
     gif_fps: int = 10
 
@@ -41,10 +41,11 @@ class Config:
     rollout_episodes: int = 8
 
     # --- reward shaping ---
-    capture_reward: float = 10.0
+    capture_reward: float = 50.0
     rim_drive_reward: float = 0.0       # zeroed for objective-only reward; restore to -1.0 for shaping
     step_penalty: float = -0.01
     closing_reward_scale: float = 0.0   # zeroed for objective-only reward; restore to 0.1 for shaping
+    sighting_reward: float = 0.02       # per-step TEAM bonus if any hunter perceives the prey
 
     # --- training ---
     batch_size: int = 64

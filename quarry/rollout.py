@@ -8,7 +8,7 @@ from quarry.agents import prey_act
 from quarry.config import Config
 from quarry.critic import build_global_state
 from quarry.relative_frame import to_relative
-from quarry.world import RIM
+from quarry.world import RIM, CH_PREY
 
 
 def _min_chebyshev(hunter_pos: list[tuple[int, int]], prey_pos: tuple[int, int]) -> int:
@@ -30,6 +30,7 @@ def compute_reward(
     grid: np.ndarray,
     rs: RewardState,
     cfg: Config,
+    team_saw_prey: bool = False,
 ) -> tuple[float, dict[str, float]]:
     """Compute the shared team reward for one step. Returns (total, breakdown)."""
     cur_dist = _min_chebyshev(hunter_pos, prey_pos)
@@ -42,15 +43,19 @@ def compute_reward(
     r_rim = cfg.rim_drive_reward if on_rim else 0.0
     r_step = cfg.step_penalty
     r_closing = cfg.closing_reward_scale * closing
+    # perception-true: caller derives team_saw_prey from the same CH_PREY
+    # observations the policy sees, so reward can never disagree with perception
+    r_sighting = cfg.sighting_reward if team_saw_prey else 0.0
 
     rs.prev_min_dist = cur_dist
 
-    total = r_capture + r_rim + r_step + r_closing
+    total = r_capture + r_rim + r_step + r_closing + r_sighting
     breakdown = {
         "capture": r_capture,
         "rim_drive": r_rim,
         "step_penalty": r_step,
         "closing": r_closing,
+        "sighting": r_sighting,
     }
     return total, breakdown
 
@@ -108,8 +113,11 @@ def collect_episode(env, actor, predictor, cfg: Config, device=torch.device("cpu
         obs_dict, _, terms, _, _ = env.step(actions)
         done = terms.get("prey", False)
 
+        # team_saw_prey: OR of per-hunter CH_PREY from the same obs the policy used
+        team_saw_prey = any(step_obs[i][CH_PREY].any() for i in range(n))
         reward, _ = compute_reward(
-            env.hunter_pos, env.prey_pos, env.grid, rs, cfg
+            env.hunter_pos, env.prey_pos, env.grid, rs, cfg,
+            team_saw_prey=team_saw_prey,
         )
 
         for i in range(n):

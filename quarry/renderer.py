@@ -28,20 +28,33 @@ class Renderer:
     def __init__(self, cfg: Config, headless=False):
         self.cfg = cfg
         self.headless = headless
-        self.grid_px = cfg.grid_size * cfg.cell_px
         self.sidebar = 200
-        self.w = self.grid_px + self.sidebar
-        self.h = self.grid_px
         self.ghost_mode = 0  # 0=all, 1/2/3=single hunter
 
         pygame.init()
+
+        # auto-scale cell size to fit the screen
+        cpx = cfg.cell_px
+        if not headless:
+            info = pygame.display.Info()
+            margin = 80  # taskbar / window chrome
+            max_h = info.current_h - margin
+            max_w = info.current_w - margin - self.sidebar
+            cpx = min(cpx, max_h // cfg.grid_size, max_w // cfg.grid_size)
+            cpx = max(cpx, 4)  # floor so cells are at least visible
+
+        self.cell_px = cpx
+        self.grid_px = cfg.grid_size * cpx
+        self.w = self.grid_px + self.sidebar
+        self.h = self.grid_px
+
         if headless:
             self.surface = pygame.Surface((self.w, self.h))
         else:
             self.surface = pygame.display.set_mode((self.w, self.h))
             pygame.display.set_caption("Quarry")
 
-        self.font = pygame.font.SysFont("consolas", 14)
+        self.font = pygame.font.SysFont("consolas", max(10, min(14, cpx - 2)))
         self.frames: list[Image.Image] = []
         self.clock = pygame.time.Clock()
 
@@ -50,7 +63,7 @@ class Renderer:
 
     def draw(self, grid, hunter_pos, prey_pos, step, max_steps, winner,
              ghost_cells=None, pred_info=None, magic_mask=None):
-        cpx = self.cfg.cell_px
+        cpx = self.cell_px
         self.surface.fill(COLORS["hud_bg"])
 
         for r in range(self.cfg.grid_size):
@@ -98,7 +111,7 @@ class Renderer:
 
     def _draw_ghosts(self, ghost_cells):
         """ghost_cells: list of 3 lists of (board_row, board_col, prob)."""
-        cpx = self.cfg.cell_px
+        cpx = self.cell_px
         sz = self.cfg.grid_size
         for i, cells in enumerate(ghost_cells):
             if self.ghost_mode != 0 and self.ghost_mode != i + 1:
@@ -120,7 +133,7 @@ class Renderer:
                 self.surface.blit(overlay, (bc * cpx, br * cpx))
 
     def _draw_magic_zones(self, magic_mask):
-        cpx = self.cfg.cell_px
+        cpx = self.cell_px
         overlay = pygame.Surface((cpx, cpx), pygame.SRCALPHA)
         overlay.fill((*COLORS["magic"], 70))
         for r in range(self.cfg.grid_size):
@@ -129,7 +142,7 @@ class Renderer:
                     self.surface.blit(overlay, (c * cpx, r * cpx))
 
     def _draw_vision(self, positions, vision, rgba, border_rgb):
-        cpx = self.cfg.cell_px
+        cpx = self.cell_px
         half = vision // 2
         size = self.cfg.grid_size
         for r, c in positions:
