@@ -41,11 +41,11 @@ class Config:
     rollout_episodes: int = 8
 
     # --- reward shaping ---
-    capture_reward: float = 10.0
+    capture_reward: float = 17.5
     rim_drive_reward: float = 0.0       # zeroed for objective-only reward; restore to -1.0 for shaping
-    step_penalty: float = -0.01
+    step_penalty: float = -0.05
     closing_reward_scale: float = 0.0   # zeroed for objective-only reward; restore to 0.1 for shaping
-    sighting_reward: float = 0.02       # per-step TEAM bonus if any hunter perceives the prey
+    sighting_reward: float = 0.0       # per-step TEAM bonus if any hunter perceives the prey
 
     # --- training ---
     batch_size: int = 64
